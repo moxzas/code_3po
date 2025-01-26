@@ -140,18 +140,24 @@ class ProjectPromptGeneratorApp:
                     self.current_files[display_text.strip()] = file_path
 
     def generate_ascii_tree(self, dir_path, relative_dir):
-        """Generate ASCII tree for a directory."""
+        """Generate ASCII tree for a directory with folders first, then files."""
         ascii_tree = []
 
         def walk_directory(path, prefix=""):
-            items = sorted(os.listdir(path))
-            for index, item in enumerate(items):
+            # Separate folders and files
+            items = os.listdir(path)
+            folders = sorted([item for item in items if os.path.isdir(os.path.join(path, item))])
+            files = sorted([item for item in items if os.path.isfile(os.path.join(path, item))])
+            sorted_items = folders + files
+
+            # Walk through sorted items
+            for index, item in enumerate(sorted_items):
                 item_path = os.path.join(path, item)
-                connector = "└── " if index == len(items) - 1 else "├── "
+                connector = "└── " if index == len(sorted_items) - 1 else "├── "
                 relative_path = os.path.relpath(item_path, self.project_root)
                 ascii_tree.append((f"{prefix}{connector}{item}", item_path))
                 if os.path.isdir(item_path):
-                    walk_directory(item_path, prefix + ("    " if index == len(items) - 1 else "│   "))
+                    walk_directory(item_path, prefix + ("    " if index == len(sorted_items) - 1 else "│   "))
 
         walk_directory(dir_path)
         return ascii_tree
