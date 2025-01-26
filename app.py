@@ -47,13 +47,22 @@ class ProjectPromptGeneratorApp:
         monospace_font = font.Font(family="Courier", size=16)
         self.file_listbox.config(font=monospace_font)
 
-        # Generate Prompt Button
-        self.generate_prompt_button = Button(self.root, text="Generate Prompt and Copy to Clipboard",
+        # Buttons at the bottom: Generate Prompt and Clear Selection
+        bottom_frame = Frame(self.root)
+        bottom_frame.pack(fill="x", pady=5)
+        self.generate_prompt_button = Button(bottom_frame, text="Generate Prompt and Copy to Clipboard",
                                              command=self.generate_prompt)
-        self.generate_prompt_button.pack(pady=5)
+        self.generate_prompt_button.pack(side="left", padx=5)
+        self.clear_selection_button = Button(bottom_frame, text="Clear Selection", command=self.clear_selection)
+        self.clear_selection_button.pack(side="left", padx=5)
 
-        # Bind Return/Enter key to the Generate Prompt function
+        # Bind Return/Enter and Esc keys
         self.root.bind("<Return>", lambda event: self.generate_prompt())
+        self.root.bind("<Escape>", lambda event: self.clear_selection())
+
+        # Load initial file list
+        if self.project_root and self.selected_dirs:
+            self.refresh_file_list()
 
     def get_config_path(self):
         """Get the path to the configuration file in the current project root."""
@@ -140,17 +149,15 @@ class ProjectPromptGeneratorApp:
                     self.current_files[display_text.strip()] = file_path
 
     def generate_ascii_tree(self, dir_path, relative_dir):
-        """Generate ASCII tree for a directory with folders first, then files."""
+        """Generate ASCII tree for a directory."""
         ascii_tree = []
 
         def walk_directory(path, prefix=""):
-            # Separate folders and files
-            items = os.listdir(path)
+            items = sorted(os.listdir(path))
             folders = sorted([item for item in items if os.path.isdir(os.path.join(path, item))])
             files = sorted([item for item in items if os.path.isfile(os.path.join(path, item))])
             sorted_items = folders + files
 
-            # Walk through sorted items
             for index, item in enumerate(sorted_items):
                 item_path = os.path.join(path, item)
                 connector = "└── " if index == len(sorted_items) - 1 else "├── "
@@ -201,6 +208,10 @@ class ProjectPromptGeneratorApp:
         # Copy to clipboard and print to console
         pyperclip.copy(export_text)
         print(export_text)
+
+    def clear_selection(self):
+        """Clear the selection in the Listbox."""
+        self.file_listbox.selection_clear(0, END)
 
 
 if __name__ == "__main__":
